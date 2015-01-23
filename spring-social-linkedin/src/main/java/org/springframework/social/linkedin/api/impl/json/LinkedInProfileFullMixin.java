@@ -23,6 +23,8 @@ import org.springframework.social.linkedin.api.ConnectionAuthorization;
 import org.springframework.social.linkedin.api.CurrentShare;
 import org.springframework.social.linkedin.api.Education;
 import org.springframework.social.linkedin.api.ImAccount;
+import org.springframework.social.linkedin.api.Language;
+import org.springframework.social.linkedin.api.Language.Proficiency;
 import org.springframework.social.linkedin.api.LinkedInDate;
 import org.springframework.social.linkedin.api.Location;
 import org.springframework.social.linkedin.api.PhoneNumber;
@@ -87,6 +89,9 @@ abstract class LinkedInProfileFullMixin extends LinkedInObjectMixin {
 	
 	@JsonProperty @JsonDeserialize(using=EducationListDeserializer.class)
 	List<Education> educations;
+	
+	@JsonProperty @JsonDeserialize(using=LanguageListDeserializer.class)
+	List<Language> languages;
 	
 	@JsonProperty("summary")
 	String summary;
@@ -192,5 +197,32 @@ abstract class LinkedInProfileFullMixin extends LinkedInObjectMixin {
 			throw ctxt.mappingException("Expected JSON object");
 		}
 	}
+	
+	private static final class LanguageListDeserializer extends JsonDeserializer<List<Language>> {
+		@Override
+		public List<Language> deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+			if (jp.hasCurrentToken() && jp.getCurrentToken().equals(JsonToken.START_OBJECT)) {
+				JsonNode dataNode = jp.readValueAs(JsonNode.class).get("values");
+				List<Language> languages = new ArrayList<Language>();
+				if (dataNode != null) {
+					for (JsonNode d : dataNode) {
+						String id = d.path("id").asText();
+						String name = d.path("language").path("name").textValue();
+						JsonNode proficiencyPath = d.path("proficiency");
+						String profname = proficiencyPath.path("name").textValue();
+						String proflevel = proficiencyPath.path("level").textValue();
+						Proficiency proficiency = null;
+						if (proflevel != null || profname != null) {
+							proficiency = new Proficiency(profname, proflevel);
+						}
+						Language lang = new Language(id, name, proficiency);
+						languages.add(lang);
+					}
+				}
+				return languages;
+			}
+			throw ctxt.mappingException("Expected JSON object");
+		}
+	}	
 	
 }

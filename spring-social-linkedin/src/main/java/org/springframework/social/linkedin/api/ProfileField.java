@@ -73,6 +73,8 @@ public enum ProfileField {
 			return "api-public-profile-request:(url)";
 		case SITE_PUBLIC_PROFILE_REQUEST_URL:
 			return "site-public-profile-request:(url)";
+		case LANGUAGES:
+			return "languages:(id,language,proficiency)";	
 		default:
 			return this.name().toLowerCase().replace('_', '-');
 		}
